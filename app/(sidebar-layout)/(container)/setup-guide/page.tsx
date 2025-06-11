@@ -58,14 +58,12 @@ export default function SetupGuidePage() {
         <h2 className='text-2xl font-semibold mb-4'>Installation</h2>
         <div className='p-4 bg-gray-50 rounded-lg'>
           <h3 className='font-medium mb-2'>Remote SSE Access</h3>
-          <p className='mb-4'>
-            You can access directly via SSE endpoint:
-          </p>
+          <p className='mb-4'>You can access directly via SSE endpoint:</p>
 
           <div className='relative mb-6'>
             <button
               onClick={() => {
-                const endpoint = `http://localhost:12007/sse with Authorization: Bearer ${apiKey?.api_key ?? '<create an api key first>'}`;
+                const endpoint = `${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/sse with Authorization: Bearer ${apiKey?.api_key ?? '<create an api key first>'}`;
                 navigator.clipboard.writeText(endpoint);
                 toast({
                   description: 'API endpoint copied to clipboard',
@@ -77,7 +75,7 @@ export default function SetupGuidePage() {
             </button>
             <Highlight
               theme={themes.github}
-              code={`http://localhost:12007/sse with Authorization: Bearer ${apiKey?.api_key ?? '<create an api key first>'}`}
+              code={`${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/sse with Authorization: Bearer ${apiKey?.api_key ?? '<create an api key first>'}`}
               language='bash'>
               {({ tokens, getLineProps, getTokenProps }) => (
                 <pre className='bg-[#f6f8fa] text-[#24292f] p-4 rounded-md overflow-x-auto'>
@@ -94,13 +92,14 @@ export default function SetupGuidePage() {
           </div>
 
           <p className='mb-4'>
-            Alternatively, if you cannot set headers, you can use this URL-based endpoint:
+            Alternatively, if you cannot set headers, you can use this URL-based
+            endpoint:
           </p>
 
           <div className='relative'>
             <button
               onClick={() => {
-                const endpoint = `http://localhost:12007/api-key/${apiKey?.api_key ?? '<create an api key first>'}/sse`;
+                const endpoint = `${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/api-key/${apiKey?.api_key ?? '<create an api key first>'}/sse`;
                 navigator.clipboard.writeText(endpoint);
                 toast({
                   description: 'URL-based API endpoint copied to clipboard',
@@ -112,7 +111,7 @@ export default function SetupGuidePage() {
             </button>
             <Highlight
               theme={themes.github}
-              code={`http://localhost:12007/api-key/${apiKey?.api_key ?? '<create an api key first>'}/sse`}
+              code={`${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/api-key/${apiKey?.api_key ?? '<create an api key first>'}/sse`}
               language='bash'>
               {({ tokens, getLineProps, getTokenProps }) => (
                 <pre className='bg-[#f6f8fa] text-[#24292f] p-4 rounded-md overflow-x-auto'>
@@ -131,7 +130,10 @@ export default function SetupGuidePage() {
       </section>
 
       <section className='mb-8'>
-        <h2 className='text-2xl font-semibold mb-4'>Legacy Installation Methods (for local access): you can still use this even if your workspace is in Default Remote Mode</h2>
+        <h2 className='text-2xl font-semibold mb-4'>
+          Legacy Installation Methods (for local access): you can still use this
+          even if your workspace is in Default Remote Mode
+        </h2>
 
         <div className='space-y-6'>
           <div className='p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg'>
@@ -180,7 +182,8 @@ export default function SetupGuidePage() {
                           env: {
                             METAMCP_API_KEY:
                               apiKey?.api_key ?? '<create an api key first>',
-                            METAMCP_API_BASE_URL: "http://localhost:12005"
+                            METAMCP_API_BASE_URL:
+                              process.env.NEXT_PUBLIC_METATOOL_APP_URL,
                           },
                         },
                       },
@@ -206,7 +209,7 @@ export default function SetupGuidePage() {
       "args": ["-y", "@metamcp/mcp-server-metamcp@latest"],
       "env": {
         "METAMCP_API_KEY": "${apiKey?.api_key ?? '<create an api key first>'}",
-        "METAMCP_API_BASE_URL": "http://localhost:12005"
+        "METAMCP_API_BASE_URL": "${process.env.NEXT_PUBLIC_METATOOL_APP_URL}"
       }
     }
   }
@@ -227,52 +230,57 @@ export default function SetupGuidePage() {
             </div>
           </div>
         </div>
-
       </section>
 
-      <section className='mb-8'> <div className='p-4 bg-gray-50 rounded-lg'>
-        <h3 className='font-medium mb-2'>Cursor Configuration</h3>
-        <p className='mb-2'>
-          For Cursor, you can configure MetaMCP directly in the settings:
-        </p>
-        <ol className='list-decimal list-inside mb-4 space-y-2'>
-          <li>Open Cursor and go to Cursor Settings</li>
-          <li>Navigate to the Features section</li>
-          <li>Find &apos;MCP Servers&apos; and click &apos;Add new MCP Server&apos;</li>
-          <li>Use the following command:</li>
-        </ol>
+      <section className='mb-8'>
+        {' '}
+        <div className='p-4 bg-gray-50 rounded-lg'>
+          <h3 className='font-medium mb-2'>Cursor Configuration</h3>
+          <p className='mb-2'>
+            For Cursor, you can configure MetaMCP directly in the settings:
+          </p>
+          <ol className='list-decimal list-inside mb-4 space-y-2'>
+            <li>Open Cursor and go to Cursor Settings</li>
+            <li>Navigate to the Features section</li>
+            <li>
+              Find &apos;MCP Servers&apos; and click &apos;Add new MCP
+              Server&apos;
+            </li>
+            <li>Use the following command:</li>
+          </ol>
 
-        <div className='relative'>
-          <button
-            onClick={() => {
-              const command = `npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url http://localhost:12005`;
-              navigator.clipboard.writeText(command);
-              toast({
-                description: 'Cursor command copied to clipboard',
-              });
-            }}
-            className='absolute top-2 right-2 p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700 transition-colors'
-            title='Copy to clipboard'>
-            <Copy className='w-5 h-5' />
-          </button>
-          <Highlight
-            theme={themes.github}
-            code={`npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url http://localhost:12005`}
-            language='bash'>
-            {({ tokens, getLineProps, getTokenProps }) => (
-              <pre className='bg-[#f6f8fa] text-[#24292f] p-4 rounded-md overflow-x-auto'>
-                {tokens.map((line, i) => (
-                  <div key={i} {...getLineProps({ line })}>
-                    {line.map((token, key) => (
-                      <span key={key} {...getTokenProps({ token })} />
-                    ))}
-                  </div>
-                ))}
-              </pre>
-            )}
-          </Highlight>
+          <div className='relative'>
+            <button
+              onClick={() => {
+                const command = `npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url ${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`;
+                navigator.clipboard.writeText(command);
+                toast({
+                  description: 'Cursor command copied to clipboard',
+                });
+              }}
+              className='absolute top-2 right-2 p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700 transition-colors'
+              title='Copy to clipboard'>
+              <Copy className='w-5 h-5' />
+            </button>
+            <Highlight
+              theme={themes.github}
+              code={`npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url ${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`}
+              language='bash'>
+              {({ tokens, getLineProps, getTokenProps }) => (
+                <pre className='bg-[#f6f8fa] text-[#24292f] p-4 rounded-md overflow-x-auto'>
+                  {tokens.map((line, i) => (
+                    <div key={i} {...getLineProps({ line })}>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token })} />
+                      ))}
+                    </div>
+                  ))}
+                </pre>
+              )}
+            </Highlight>
+          </div>
         </div>
-      </div></section>
+      </section>
 
       <section className='mb-8'>
         <h2 className='text-2xl font-semibold mb-4'>Windows Configuration</h2>
@@ -281,14 +289,12 @@ export default function SetupGuidePage() {
             For Windows, you can use the following configuration options:
           </p>
 
-          <p className='mb-4'>
-            You can use the following command for Cursor:
-          </p>
+          <p className='mb-4'>You can use the following command for Cursor:</p>
 
           <div className='relative mb-6'>
             <button
               onClick={() => {
-                const command = `cmd /c npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url http://localhost:12005`;
+                const command = `cmd /c npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url ${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`;
                 navigator.clipboard.writeText(command);
                 toast({
                   description: 'Windows command copied to clipboard',
@@ -300,7 +306,7 @@ export default function SetupGuidePage() {
             </button>
             <Highlight
               theme={themes.github}
-              code={`cmd /c npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url http://localhost:12005`}
+              code={`cmd /c npx -y @metamcp/mcp-server-metamcp@latest --metamcp-api-key ${apiKey?.api_key ?? '<create an api key first>'} --metamcp-api-base-url ${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`}
               language='bash'>
               {({ tokens, getLineProps, getTokenProps }) => (
                 <pre className='bg-[#f6f8fa] text-[#24292f] p-4 rounded-md overflow-x-auto'>
@@ -316,9 +322,7 @@ export default function SetupGuidePage() {
             </Highlight>
           </div>
 
-          <p className='mb-4'>
-            Or configure it using json:
-          </p>
+          <p className='mb-4'>Or configure it using json:</p>
 
           <div className='relative'>
             <button
@@ -327,19 +331,21 @@ export default function SetupGuidePage() {
                   {
                     mcpServers: {
                       MetaMCP: {
-                        command: "cmd",
+                        command: 'cmd',
                         args: [
-                          "/c",
-                          "npx",
-                          "-y",
-                          "@metamcp/mcp-server-metamcp@latest"
+                          '/c',
+                          'npx',
+                          '-y',
+                          '@metamcp/mcp-server-metamcp@latest',
                         ],
                         env: {
-                          METAMCP_API_KEY: apiKey?.api_key ?? '<create an api key first>',
-                          METAMCP_API_BASE_URL: "http://localhost:12005"
-                        }
-                      }
-                    }
+                          METAMCP_API_KEY:
+                            apiKey?.api_key ?? '<create an api key first>',
+                          METAMCP_API_BASE_URL:
+                            process.env.NEXT_PUBLIC_METATOOL_APP_URL,
+                        },
+                      },
+                    },
                   },
                   null,
                   2
@@ -367,7 +373,7 @@ export default function SetupGuidePage() {
       ],
       "env": {
         "METAMCP_API_KEY": "${apiKey?.api_key ?? '<create an api key first>'}",
-        "METAMCP_API_BASE_URL": "http://localhost:12005"
+        "METAMCP_API_BASE_URL": "${process.env.NEXT_PUBLIC_METATOOL_APP_URL}"
       }
     }
   }
@@ -393,7 +399,8 @@ export default function SetupGuidePage() {
         <h2 className='text-2xl font-semibold mb-4'>Standalone SSE Server</h2>
         <div className='p-4 bg-gray-50 rounded-lg'>
           <p className='mb-4'>
-            You can also use the following command to start a standalone SSE server:
+            You can also use the following command to start a standalone SSE
+            server:
           </p>
 
           <div className='relative mb-6'>
@@ -427,9 +434,7 @@ export default function SetupGuidePage() {
             </Highlight>
           </div>
 
-          <p className='mb-4'>
-            Then use following json configuration:
-          </p>
+          <p className='mb-4'>Then use following json configuration:</p>
 
           <div className='relative'>
             <button
@@ -438,9 +443,9 @@ export default function SetupGuidePage() {
                   {
                     mcpServers: {
                       MetaMCP: {
-                        url: "http://localhost:12006",
-                      }
-                    }
+                        url: 'http://localhost:12006',
+                      },
+                    },
                   },
                   null,
                   2
@@ -481,18 +486,37 @@ export default function SetupGuidePage() {
       </section>
 
       <section className='mb-8'>
-        <h2 className='text-2xl font-semibold mb-4'>Smithery Windows Configuration</h2>
+        <h2 className='text-2xl font-semibold mb-4'>
+          Smithery Windows Configuration
+        </h2>
         <div className='p-4 bg-gray-50 rounded-lg'>
           <p className='mb-4'>
-            We recommend to use Smithery to run MCPs in docker on cloud for max compatibility. To setup Smithery CLI on Windows check this out: <Link href="https://smithery.ai/docs/smithery-cli" className='text-blue-600 hover:text-blue-800 underline' target="_blank" rel="noopener noreferrer">https://smithery.ai/docs/smithery-cli</Link>.
+            We recommend to use Smithery to run MCPs in docker on cloud for max
+            compatibility. To setup Smithery CLI on Windows check this out:{' '}
+            <Link
+              href='https://smithery.ai/docs/smithery-cli'
+              className='text-blue-600 hover:text-blue-800 underline'
+              target='_blank'
+              rel='noopener noreferrer'>
+              https://smithery.ai/docs/smithery-cli
+            </Link>
+            .
           </p>
 
           <p className='mb-4'>
-            Visit MetaMCP server listing directly on Smithery: <Link href="https://smithery.ai/server/@metatool-ai/mcp-server-metamcp" className='text-blue-600 hover:text-blue-800 underline' target="_blank" rel="noopener noreferrer">https://smithery.ai/server/@metatool-ai/mcp-server-metamcp</Link>
+            Visit MetaMCP server listing directly on Smithery:{' '}
+            <Link
+              href='https://smithery.ai/server/@metatool-ai/mcp-server-metamcp'
+              className='text-blue-600 hover:text-blue-800 underline'
+              target='_blank'
+              rel='noopener noreferrer'>
+              https://smithery.ai/server/@metatool-ai/mcp-server-metamcp
+            </Link>
           </p>
 
           <p className='mb-4'>
-            For Smithery on Windows, you can also use the following configuration options:
+            For Smithery on Windows, you can also use the following
+            configuration options:
           </p>
 
           <p className='mb-4'>
@@ -541,22 +565,23 @@ export default function SetupGuidePage() {
                   {
                     mcpServers: {
                       MetaMCP: {
-                        command: "smithery",
+                        command: 'smithery',
                         args: [
-                          "run",
-                          "@metatool-ai/mcp-server-metamcp",
-                          "--config",
-                          `{\"metamcpApiKey\":\"${apiKey?.api_key ?? '<create an api key first>'} \"}`
-                        ]
-                      }
-                    }
+                          'run',
+                          '@metatool-ai/mcp-server-metamcp',
+                          '--config',
+                          `{\"metamcpApiKey\":\"${apiKey?.api_key ?? '<create an api key first>'} \"}`,
+                        ],
+                      },
+                    },
                   },
                   null,
                   2
                 );
                 navigator.clipboard.writeText(jsonConfig);
                 toast({
-                  description: 'Smithery Windows configuration copied to clipboard',
+                  description:
+                    'Smithery Windows configuration copied to clipboard',
                 });
               }}
               className='absolute top-2 right-2 p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700 transition-colors'

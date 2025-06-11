@@ -1,5 +1,8 @@
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { getDefaultEnvironment,StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import {
+  getDefaultEnvironment,
+  StdioClientTransport,
+} from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import express from 'express';
@@ -23,7 +26,9 @@ export const defaultEnvironment = {
 };
 
 // Create a transport based on the request query parameters
-export const createTransport = async (req: express.Request): Promise<Transport> => {
+export const createTransport = async (
+  req: express.Request
+): Promise<Transport> => {
   const query = req.query;
   console.log('Query parameters:', query);
 
@@ -53,7 +58,7 @@ export const createTransport = async (req: express.Request): Promise<Transport> 
       transport.stderr.on('data', (chunk) => {
         console.error(`[${cmd}] ${chunk.toString().trim()}`);
       });
-      
+
       transport.stderr.on('error', (error) => {
         console.error(`[${cmd}] stderr error:`, error);
       });
@@ -62,8 +67,10 @@ export const createTransport = async (req: express.Request): Promise<Transport> 
     console.log('Spawned stdio transport');
     return transport;
   } else if (transportType === 'sse') {
-    console.log('WARNING: The SSE transport is deprecated and has been replaced by streamable-http');
-    
+    console.log(
+      'WARNING: The SSE transport is deprecated and has been replaced by streamable-http'
+    );
+
     const url = query.url as string;
     const headers: HeadersInit = {
       Accept: 'text/event-stream',
@@ -127,14 +134,11 @@ export const createTransport = async (req: express.Request): Promise<Transport> 
       `Streamable HTTP transport: url=${httpUrl}, headers=${Object.keys(headers)}`
     );
 
-    const transport = new StreamableHTTPClientTransport(
-      new URL(httpUrl),
-      {
-        requestInit: {
-          headers,
-        },
+    const transport = new StreamableHTTPClientTransport(new URL(httpUrl), {
+      requestInit: {
+        headers,
       },
-    );
+    });
     await transport.start();
     console.log('Connected to Streamable HTTP transport');
     return transport;
@@ -145,7 +149,9 @@ export const createTransport = async (req: express.Request): Promise<Transport> 
 };
 
 // Create a MetaMCP transport
-export const createMetaMcpTransport = async (apiKey: string): Promise<Transport> => {
+export const createMetaMcpTransport = async (
+  apiKey: string
+): Promise<Transport> => {
   console.log(`Creating MetaMCP transport for API key ${apiKey}`);
 
   const command = 'npx';
@@ -158,10 +164,12 @@ export const createMetaMcpTransport = async (apiKey: string): Promise<Transport>
     METAMCP_API_KEY: apiKey,
     METAMCP_API_BASE_URL:
       process.env.USE_DOCKER_HOST === 'true'
-        ? 'http://host.docker.internal:12005'
-        : 'http://localhost:12005',
+        ? `${process.env.NEXT_PUBLIC_INTERNAL_METATOOL_APP_URL}`
+        : `${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`,
     USE_DOCKER_HOST: process.env.USE_DOCKER_HOST,
   };
+
+  console.log(env);
 
   const { cmd, args } = findActualExecutable(command, origArgs);
 
@@ -181,7 +189,7 @@ export const createMetaMcpTransport = async (apiKey: string): Promise<Transport>
     transport.stderr.on('data', (chunk) => {
       console.error(`[Sub MCP] ${chunk.toString().trim()}`);
     });
-    
+
     transport.stderr.on('error', (error) => {
       console.error(`[Sub MCP] Stderr error:`, error);
     });
@@ -189,4 +197,4 @@ export const createMetaMcpTransport = async (apiKey: string): Promise<Transport>
 
   console.log(`Spawned MetaMCP transport for API key ${apiKey}`);
   return transport;
-}; 
+};
