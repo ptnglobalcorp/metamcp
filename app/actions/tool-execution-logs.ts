@@ -8,6 +8,7 @@ import {
   toolExecutionLogsTable,
   ToolExecutionStatus,
 } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 
 export type ToolExecutionLog = {
   id: number;
@@ -51,10 +52,12 @@ export async function getToolExecutionLogs({
   const whereConditions = [];
 
   // Filter by MCP servers that belong to the current profile
-  const allowedMcpServers = await db
-    .select({ uuid: mcpServersTable.uuid })
-    .from(mcpServersTable)
-    .where(eq(mcpServersTable.profile_uuid, currentProfileUuid));
+  const allowedMcpServers = await retryDbQuery(() =>
+    db
+      .select({ uuid: mcpServersTable.uuid })
+      .from(mcpServersTable)
+      .where(eq(mcpServersTable.profile_uuid, currentProfileUuid))
+  );
 
   const allowedMcpServerUuids = allowedMcpServers.map((server) => server.uuid);
 
@@ -84,34 +87,38 @@ export async function getToolExecutionLogs({
     whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
   // Get total count
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(toolExecutionLogsTable)
-    .where(whereClause);
+  const [{ count }] = await retryDbQuery(() =>
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(toolExecutionLogsTable)
+      .where(whereClause)
+  );
 
   // Get logs with joined MCP server names
-  const logs = await db
-    .select({
-      id: toolExecutionLogsTable.id,
-      mcp_server_uuid: toolExecutionLogsTable.mcp_server_uuid,
-      tool_name: toolExecutionLogsTable.tool_name,
-      payload: toolExecutionLogsTable.payload,
-      result: toolExecutionLogsTable.result,
-      status: toolExecutionLogsTable.status,
-      error_message: toolExecutionLogsTable.error_message,
-      execution_time_ms: toolExecutionLogsTable.execution_time_ms,
-      created_at: toolExecutionLogsTable.created_at,
-      mcp_server_name: mcpServersTable.name,
-    })
-    .from(toolExecutionLogsTable)
-    .leftJoin(
-      mcpServersTable,
-      eq(toolExecutionLogsTable.mcp_server_uuid, mcpServersTable.uuid)
-    )
-    .where(whereClause)
-    .orderBy(desc(toolExecutionLogsTable.id))
-    .limit(limit)
-    .offset(offset);
+  const logs = await retryDbQuery(() =>
+    db
+      .select({
+        id: toolExecutionLogsTable.id,
+        mcp_server_uuid: toolExecutionLogsTable.mcp_server_uuid,
+        tool_name: toolExecutionLogsTable.tool_name,
+        payload: toolExecutionLogsTable.payload,
+        result: toolExecutionLogsTable.result,
+        status: toolExecutionLogsTable.status,
+        error_message: toolExecutionLogsTable.error_message,
+        execution_time_ms: toolExecutionLogsTable.execution_time_ms,
+        created_at: toolExecutionLogsTable.created_at,
+        mcp_server_name: mcpServersTable.name,
+      })
+      .from(toolExecutionLogsTable)
+      .leftJoin(
+        mcpServersTable,
+        eq(toolExecutionLogsTable.mcp_server_uuid, mcpServersTable.uuid)
+      )
+      .where(whereClause)
+      .orderBy(desc(toolExecutionLogsTable.id))
+      .limit(limit)
+      .offset(offset)
+  );
 
   return {
     logs: logs.map((log) => ({
@@ -131,10 +138,12 @@ export async function getToolNames(
   }
 
   // Get allowed MCP servers
-  const allowedMcpServers = await db
-    .select({ uuid: mcpServersTable.uuid })
-    .from(mcpServersTable)
-    .where(eq(mcpServersTable.profile_uuid, currentProfileUuid));
+  const allowedMcpServers = await retryDbQuery(() =>
+    db
+      .select({ uuid: mcpServersTable.uuid })
+      .from(mcpServersTable)
+      .where(eq(mcpServersTable.profile_uuid, currentProfileUuid))
+  );
 
   const allowedMcpServerUuids = allowedMcpServers.map((server) => server.uuid);
 
@@ -143,13 +152,15 @@ export async function getToolNames(
   }
 
   // Get unique tool names
-  const result = await db
-    .selectDistinct({ tool_name: toolExecutionLogsTable.tool_name })
-    .from(toolExecutionLogsTable)
-    .where(
-      inArray(toolExecutionLogsTable.mcp_server_uuid, allowedMcpServerUuids)
-    )
-    .orderBy(toolExecutionLogsTable.tool_name);
+  const result = await retryDbQuery(() =>
+    db
+      .selectDistinct({ tool_name: toolExecutionLogsTable.tool_name })
+      .from(toolExecutionLogsTable)
+      .where(
+        inArray(toolExecutionLogsTable.mcp_server_uuid, allowedMcpServerUuids)
+      )
+      .orderBy(toolExecutionLogsTable.tool_name)
+  );
 
   return result.map((r) => r.tool_name);
 }

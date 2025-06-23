@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { toolExecutionLogsTable } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 
 import { authenticateApiKey } from '../../auth';
 
@@ -44,11 +45,13 @@ export async function PUT(
     }
 
     // Update the tool execution log entry
-    const updatedLog = await db
-      .update(toolExecutionLogsTable)
-      .set(updateData)
-      .where(eq(toolExecutionLogsTable.id, parseInt(logId)))
-      .returning();
+    const updatedLog = await retryDbQuery(() =>
+      db
+        .update(toolExecutionLogsTable)
+        .set(updateData)
+        .where(eq(toolExecutionLogsTable.id, parseInt(logId)))
+        .returning()
+    );
 
     if (updatedLog.length === 0) {
       return NextResponse.json(

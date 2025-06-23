@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { mcpServersTable, toolsTable } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 
 import { authenticateApiKey } from '../auth';
 
@@ -23,7 +24,12 @@ export async function POST(request: Request) {
     }
 
     // Validate required fields for all tools and prepare for batch insertion
-    const validTools = [];
+    const validTools: Array<{
+      name: string;
+      description?: string;
+      toolSchema: any;
+      mcp_server_uuid: string;
+    }> = [];
     const errors = [];
 
     for (const tool of tools) {
@@ -51,17 +57,19 @@ export async function POST(request: Request) {
     let results: any[] = [];
     if (validTools.length > 0) {
       try {
-        results = await db
-          .insert(toolsTable)
-          .values(validTools)
-          .onConflictDoUpdate({
-            target: [toolsTable.mcp_server_uuid, toolsTable.name],
-            set: {
-              description: sql`excluded.description`,
-              toolSchema: sql`excluded.tool_schema`,
-            },
-          })
-          .returning();
+        results = await retryDbQuery(() =>
+          db
+            .insert(toolsTable)
+            .values(validTools)
+            .onConflictDoUpdate({
+              target: [toolsTable.mcp_server_uuid, toolsTable.name],
+              set: {
+                description: sql`excluded.description`,
+                toolSchema: sql`excluded.tool_schema`,
+              },
+            })
+            .returning()
+        );
       } catch (error: any) {
         // Handle database errors for the batch operation
         console.error('Database error:', error);
@@ -120,7 +128,7 @@ export async function GET(request: Request) {
         }`
       );
 
-    const results = await query;
+    const results = await retryDbQuery(() => query);
 
     return NextResponse.json({ results });
   } catch (error) {

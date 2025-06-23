@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { apiKeysTable } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 
 import { getProjectActiveProfile } from '../actions/profiles';
 
@@ -18,11 +19,13 @@ export async function authenticateApiKey(request: Request) {
   }
 
   const apiKey = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix
-  const apiKeyRecord = await db
-    .select()
-    .from(apiKeysTable)
-    .where(eq(apiKeysTable.api_key, apiKey))
-    .limit(1);
+  const apiKeyRecord = await retryDbQuery(() =>
+    db
+      .select()
+      .from(apiKeysTable)
+      .where(eq(apiKeysTable.api_key, apiKey))
+      .limit(1)
+  );
 
   if (apiKeyRecord.length === 0) {
     return {

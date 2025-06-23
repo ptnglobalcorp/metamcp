@@ -8,6 +8,7 @@ import {
   customMcpServersTable,
   McpServerStatus,
 } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 import { CustomMcpServer } from '@/types/custom-mcp-server';
 import {
   CreateCustomMcpServerData,
@@ -15,32 +16,37 @@ import {
 } from '@/types/custom-mcp-server';
 
 export async function getCustomMcpServers(profileUuid: string) {
-  const servers = await db
-    .select({
-      uuid: customMcpServersTable.uuid,
-      name: customMcpServersTable.name,
-      description: customMcpServersTable.description,
-      code_uuid: customMcpServersTable.code_uuid,
-      additionalArgs: customMcpServersTable.additionalArgs,
-      env: customMcpServersTable.env,
-      created_at: customMcpServersTable.created_at,
-      profile_uuid: customMcpServersTable.profile_uuid,
-      status: customMcpServersTable.status,
-      code: codesTable.code,
-      codeFileName: codesTable.fileName,
-    })
-    .from(customMcpServersTable)
-    .leftJoin(codesTable, eq(customMcpServersTable.code_uuid, codesTable.uuid))
-    .where(
-      and(
-        eq(customMcpServersTable.profile_uuid, profileUuid),
-        or(
-          eq(customMcpServersTable.status, McpServerStatus.ACTIVE),
-          eq(customMcpServersTable.status, McpServerStatus.INACTIVE)
+  const servers = await retryDbQuery(() =>
+    db
+      .select({
+        uuid: customMcpServersTable.uuid,
+        name: customMcpServersTable.name,
+        description: customMcpServersTable.description,
+        code_uuid: customMcpServersTable.code_uuid,
+        additionalArgs: customMcpServersTable.additionalArgs,
+        env: customMcpServersTable.env,
+        created_at: customMcpServersTable.created_at,
+        profile_uuid: customMcpServersTable.profile_uuid,
+        status: customMcpServersTable.status,
+        code: codesTable.code,
+        codeFileName: codesTable.fileName,
+      })
+      .from(customMcpServersTable)
+      .leftJoin(
+        codesTable,
+        eq(customMcpServersTable.code_uuid, codesTable.uuid)
+      )
+      .where(
+        and(
+          eq(customMcpServersTable.profile_uuid, profileUuid),
+          or(
+            eq(customMcpServersTable.status, McpServerStatus.ACTIVE),
+            eq(customMcpServersTable.status, McpServerStatus.INACTIVE)
+          )
         )
       )
-    )
-    .orderBy(desc(customMcpServersTable.created_at));
+      .orderBy(desc(customMcpServersTable.created_at))
+  );
 
   return servers as CustomMcpServer[];
 }
@@ -49,35 +55,34 @@ export async function getCustomMcpServerByUuid(
   profileUuid: string,
   uuid: string
 ): Promise<CustomMcpServer | null> {
-  const server = await db
-    .select({
-      uuid: customMcpServersTable.uuid,
-      name: customMcpServersTable.name,
-      description: customMcpServersTable.description,
-      code_uuid: customMcpServersTable.code_uuid,
-      additionalArgs: customMcpServersTable.additionalArgs,
-      env: customMcpServersTable.env,
-      created_at: customMcpServersTable.created_at,
-      profile_uuid: customMcpServersTable.profile_uuid,
-      status: customMcpServersTable.status,
-      code: codesTable.code,
-      codeFileName: codesTable.fileName,
-    })
-    .from(customMcpServersTable)
-    .leftJoin(codesTable, eq(customMcpServersTable.code_uuid, codesTable.uuid))
-    .where(
-      and(
-        eq(customMcpServersTable.uuid, uuid),
-        eq(customMcpServersTable.profile_uuid, profileUuid)
+  const server = await retryDbQuery(() =>
+    db
+      .select({
+        uuid: customMcpServersTable.uuid,
+        name: customMcpServersTable.name,
+        description: customMcpServersTable.description,
+        code_uuid: customMcpServersTable.code_uuid,
+        additionalArgs: customMcpServersTable.additionalArgs,
+        env: customMcpServersTable.env,
+        created_at: customMcpServersTable.created_at,
+        profile_uuid: customMcpServersTable.profile_uuid,
+        status: customMcpServersTable.status,
+        code: codesTable.code,
+        codeFileName: codesTable.fileName,
+      })
+      .from(customMcpServersTable)
+      .leftJoin(
+        codesTable,
+        eq(customMcpServersTable.code_uuid, codesTable.uuid)
       )
-    )
-    .limit(1);
-
-  if (server.length === 0) {
-    return null;
-  }
-
-  return server[0] as CustomMcpServer;
+      .where(
+        and(
+          eq(customMcpServersTable.profile_uuid, profileUuid),
+          eq(customMcpServersTable.uuid, uuid)
+        )
+      )
+  );
+  return server?.[0] ?? null;
 }
 
 export async function deleteCustomMcpServerByUuid(
@@ -85,27 +90,31 @@ export async function deleteCustomMcpServerByUuid(
   uuid: string
 ): Promise<void> {
   // First get the code_uuid
-  const server = await db
-    .select({ code_uuid: customMcpServersTable.code_uuid })
-    .from(customMcpServersTable)
-    .where(
-      and(
-        eq(customMcpServersTable.uuid, uuid),
-        eq(customMcpServersTable.profile_uuid, profileUuid)
-      )
-    )
-    .limit(1);
-
-  if (server.length > 0) {
-    // Delete the custom MCP server first
-    await db
-      .delete(customMcpServersTable)
+  const server = await retryDbQuery(() =>
+    db
+      .select({ code_uuid: customMcpServersTable.code_uuid })
+      .from(customMcpServersTable)
       .where(
         and(
           eq(customMcpServersTable.uuid, uuid),
           eq(customMcpServersTable.profile_uuid, profileUuid)
         )
-      );
+      )
+      .limit(1)
+  );
+
+  if (server.length > 0) {
+    // Delete the custom MCP server first
+    await retryDbQuery(() =>
+      db
+        .delete(customMcpServersTable)
+        .where(
+          and(
+            eq(customMcpServersTable.uuid, uuid),
+            eq(customMcpServersTable.profile_uuid, profileUuid)
+          )
+        )
+    );
   }
 }
 
@@ -114,33 +123,37 @@ export async function toggleCustomMcpServerStatus(
   uuid: string,
   newStatus: McpServerStatus
 ): Promise<void> {
-  await db
-    .update(customMcpServersTable)
-    .set({ status: newStatus })
-    .where(
-      and(
-        eq(customMcpServersTable.uuid, uuid),
-        eq(customMcpServersTable.profile_uuid, profileUuid)
+  await retryDbQuery(() =>
+    db
+      .update(customMcpServersTable)
+      .set({ status: newStatus })
+      .where(
+        and(
+          eq(customMcpServersTable.uuid, uuid),
+          eq(customMcpServersTable.profile_uuid, profileUuid)
+        )
       )
-    );
+  );
 }
 
 export async function createCustomMcpServer(
   profileUuid: string,
   data: CreateCustomMcpServerData
 ) {
-  const [server] = await db
-    .insert(customMcpServersTable)
-    .values({
-      profile_uuid: profileUuid,
-      name: data.name,
-      description: data.description || '',
-      code_uuid: data.code_uuid,
-      additionalArgs: data.additionalArgs || [],
-      env: data.env || {},
-      status: McpServerStatus.ACTIVE,
-    })
-    .returning();
+  const [server] = await retryDbQuery(() =>
+    db
+      .insert(customMcpServersTable)
+      .values({
+        profile_uuid: profileUuid,
+        name: data.name,
+        description: data.description || '',
+        code_uuid: data.code_uuid,
+        additionalArgs: data.additionalArgs || [],
+        env: data.env || {},
+        status: McpServerStatus.ACTIVE,
+      })
+      .returning()
+  );
 
   return server;
 }
@@ -150,15 +163,17 @@ export async function updateCustomMcpServer(
   uuid: string,
   data: UpdateCustomMcpServerData
 ): Promise<void> {
-  await db
-    .update(customMcpServersTable)
-    .set({
-      ...data,
-    })
-    .where(
-      and(
-        eq(customMcpServersTable.uuid, uuid),
-        eq(customMcpServersTable.profile_uuid, profileUuid)
+  await retryDbQuery(() =>
+    db
+      .update(customMcpServersTable)
+      .set({
+        ...data,
+      })
+      .where(
+        and(
+          eq(customMcpServersTable.uuid, uuid),
+          eq(customMcpServersTable.profile_uuid, profileUuid)
+        )
       )
-    );
+  );
 }

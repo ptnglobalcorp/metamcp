@@ -16,16 +16,18 @@ export default function InspectorGuidePage() {
   );
   const { toast } = useToast();
 
-  const inspectorCommand = `npx -y @modelcontextprotocol/inspector npx -y @metamcp/mcp-server-metamcp@latest -e METAMCP_API_KEY=${apiKey?.api_key || '<YOUR_API_KEY>'} -e METAMCP_API_BASE_URL=http://localhost:12005`;
+  const inspectorCommand = `npx -y @modelcontextprotocol/inspector npx -y @metamcp/mcp-server-metamcp@latest -e METAMCP_API_KEY=${apiKey?.api_key || '<YOUR_API_KEY>'} -e METAMCP_API_BASE_URL=${process.env.NEXT_PUBLIC_METATOOL_APP_URL}`;
 
-  const sseEndpoint = `http://localhost:12007/sse with Authorization: Bearer ${apiKey?.api_key || '<YOUR_API_KEY>'}`;
-  const urlBasedSseEndpoint = `http://localhost:12007/api-key/${apiKey?.api_key || '<YOUR_API_KEY>'}/sse`;
+  const sseEndpoint = `${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/sse with Authorization: Bearer ${apiKey?.api_key || '<YOUR_API_KEY>'}`;
+  const urlBasedSseEndpoint = `${process.env.NEXT_PUBLIC_REMOTE_HOSTING_URL}/api-key/${apiKey?.api_key || '<YOUR_API_KEY>'}/sse`;
 
   return (
     <div className='container mx-auto py-6 flex flex-col items-start justify-center gap-6'>
-      <h1 className='text-2xl font-semibold'>Remote SSE Mode Inspector Guide</h1>
+      <h1 className='text-2xl font-semibold'>
+        Remote SSE Mode Inspector Guide
+      </h1>
 
-      <Card className="w-full">
+      <Card className='w-full'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             <Terminal className='h-5 w-5' />
@@ -33,20 +35,23 @@ export default function InspectorGuidePage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">
-            You can use the SSE mode to trigger the inspector directly from your UI. This method allows for a more integrated experience when inspecting tools.
+          <p className='mb-4'>
+            You can use the SSE mode to trigger the inspector directly from your
+            UI. This method allows for a more integrated experience when
+            inspecting tools.
           </p>
 
-          <div className="space-y-4">
+          <div className='space-y-4'>
             <div>
-              <h3 className="font-medium mb-2">Using Authorization Header:</h3>
+              <h3 className='font-medium mb-2'>Using Authorization Header:</h3>
               <div className='relative'>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(sseEndpoint);
                     toast({
                       title: 'Copied to clipboard',
-                      description: 'The SSE endpoint has been copied to your clipboard.',
+                      description:
+                        'The SSE endpoint has been copied to your clipboard.',
                     });
                   }}
                   className='absolute top-2 right-2 p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700 transition-colors'
@@ -60,14 +65,17 @@ export default function InspectorGuidePage() {
             </div>
 
             <div>
-              <h3 className="font-medium mb-2">Using URL-based Authentication:</h3>
+              <h3 className='font-medium mb-2'>
+                Using URL-based Authentication:
+              </h3>
               <div className='relative'>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(urlBasedSseEndpoint);
                     toast({
                       title: 'Copied to clipboard',
-                      description: 'The URL-based SSE endpoint has been copied to your clipboard.',
+                      description:
+                        'The URL-based SSE endpoint has been copied to your clipboard.',
                     });
                   }}
                   className='absolute top-2 right-2 p-2 text-gray-400 hover:text-white rounded-md hover:bg-gray-700 transition-colors'
@@ -80,15 +88,18 @@ export default function InspectorGuidePage() {
               </div>
             </div>
 
-            <p className="mt-4">
-              Configure your UI to connect to these endpoints and the inspector will be triggered automatically, providing real-time tool inspection capabilities.
+            <p className='mt-4'>
+              Configure your UI to connect to these endpoints and the inspector
+              will be triggered automatically, providing real-time tool
+              inspection capabilities.
             </p>
           </div>
         </CardContent>
       </Card>
 
-
-      <h1 className='text-2xl font-semibold'>Local Proxy Mode Inspector Guide</h1>
+      <h1 className='text-2xl font-semibold'>
+        Local Proxy Mode Inspector Guide
+      </h1>
       <p className='text-lg'>
         Because MetaMCP is a local proxy and we currently don&apos;t support any
         cloud hosting of your MCPs. You can use MCP&apos;s official inspector to
