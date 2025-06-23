@@ -195,6 +195,32 @@ sequenceDiagram
     MetaMCPMCP ->> MCPClient: Return tool response
 ```
 
+## Basic HTTP Authentication (Optional)
+
+MetaMCP App includes optional basic HTTP authentication to protect your self-hosted instance. To enable it:
+
+1. Set the following environment variables in your `.env` file:
+   ```bash
+   BASIC_AUTH_USERNAME=your-username
+   BASIC_AUTH_PASSWORD=your-secure-password
+   ```
+
+2. Restart your application:
+   ```bash
+   docker compose down
+   docker compose up --build -d
+   ```
+
+When enabled, all routes will require basic HTTP authentication except for:
+- Static assets (`/_next/static`, `/_next/image`, `/favicon.ico`)
+- API routes (`/api/*`) - these use their own API key authentication
+- Other public paths (you can customize this in `middleware.ts`)
+
+If you don't set these environment variables, the authentication will be disabled and the app will work as before.
+
+**Security Note**: Make sure to use a strong password and consider using HTTPS in production environments.
+
+
 ## License
 
 GNU AGPL v3
