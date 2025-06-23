@@ -169,8 +169,6 @@ export const createMetaMcpTransport = async (
     USE_DOCKER_HOST: process.env.USE_DOCKER_HOST,
   };
 
-  console.log(env);
-
   const { cmd, args } = findActualExecutable(command, origArgs);
 
   console.log(`Stdio transport: command=${cmd}, args=${args}`);
