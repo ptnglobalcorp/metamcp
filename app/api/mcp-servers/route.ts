@@ -7,6 +7,7 @@ import {
   McpServerStatus,
   oauthSessionsTable,
 } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 
 import { authenticateApiKey } from '../auth';
 
@@ -15,22 +16,24 @@ export async function GET(request: Request) {
     const auth = await authenticateApiKey(request);
     if (auth.error) return auth.error;
 
-    const activeMcpServers = await db
-      .select({
-        server: mcpServersTable,
-        tokens: oauthSessionsTable.tokens,
-      })
-      .from(mcpServersTable)
-      .leftJoin(
-        oauthSessionsTable,
-        eq(mcpServersTable.uuid, oauthSessionsTable.mcp_server_uuid)
-      )
-      .where(
-        and(
-          eq(mcpServersTable.status, McpServerStatus.ACTIVE),
-          eq(mcpServersTable.profile_uuid, auth.activeProfile.uuid)
+    const activeMcpServers = await retryDbQuery(() =>
+      db
+        .select({
+          server: mcpServersTable,
+          tokens: oauthSessionsTable.tokens,
+        })
+        .from(mcpServersTable)
+        .leftJoin(
+          oauthSessionsTable,
+          eq(mcpServersTable.uuid, oauthSessionsTable.mcp_server_uuid)
         )
-      );
+        .where(
+          and(
+            eq(mcpServersTable.status, McpServerStatus.ACTIVE),
+            eq(mcpServersTable.profile_uuid, auth.activeProfile.uuid)
+          )
+        )
+    );
 
     // Map the result to include tokens if they exist
     const result = activeMcpServers.map(({ server, tokens }) => ({
@@ -56,19 +59,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { uuid, name, description, command, args, env, status } = body;
 
-    const newMcpServer = await db
-      .insert(mcpServersTable)
-      .values({
-        uuid,
-        name,
-        description,
-        command,
-        args,
-        env,
-        status,
-        profile_uuid: auth.activeProfile.uuid,
-      })
-      .returning();
+    const newMcpServer = await retryDbQuery(() =>
+      db
+        .insert(mcpServersTable)
+        .values({
+          uuid,
+          name,
+          description,
+          command,
+          args,
+          env,
+          status,
+          profile_uuid: auth.activeProfile.uuid,
+        })
+        .returning()
+    );
 
     return NextResponse.json(newMcpServer[0]);
   } catch (error) {

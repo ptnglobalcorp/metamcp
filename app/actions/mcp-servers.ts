@@ -4,6 +4,7 @@ import { and, desc, eq, or } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { mcpServersTable, McpServerStatus, McpServerType } from '@/db/schema';
+import { retryDbQuery } from '@/lib/utils';
 import { McpServer } from '@/types/mcp-server';
 
 export async function getMcpServers(
@@ -15,21 +16,23 @@ export async function getMcpServers(
     return [];
   }
 
-  const servers = await db
-    .select()
-    .from(mcpServersTable)
-    .where(
-      and(
-        eq(mcpServersTable.profile_uuid, profileUuid),
-        status
-          ? eq(mcpServersTable.status, status)
-          : or(
-              eq(mcpServersTable.status, McpServerStatus.ACTIVE),
-              eq(mcpServersTable.status, McpServerStatus.INACTIVE)
-            )
+  const servers = await retryDbQuery(() =>
+    db
+      .select()
+      .from(mcpServersTable)
+      .where(
+        and(
+          eq(mcpServersTable.profile_uuid, profileUuid),
+          status
+            ? eq(mcpServersTable.status, status)
+            : or(
+                eq(mcpServersTable.status, McpServerStatus.ACTIVE),
+                eq(mcpServersTable.status, McpServerStatus.INACTIVE)
+              )
+        )
       )
-    )
-    .orderBy(desc(mcpServersTable.created_at));
+      .orderBy(desc(mcpServersTable.created_at))
+  );
 
   return servers as McpServer[];
 }
@@ -38,12 +41,14 @@ export async function getMcpServerByUuid(
   profileUuid: string,
   uuid: string
 ): Promise<McpServer | undefined> {
-  const server = await db.query.mcpServersTable.findFirst({
-    where: and(
-      eq(mcpServersTable.uuid, uuid),
-      eq(mcpServersTable.profile_uuid, profileUuid)
-    ),
-  });
+  const server = await retryDbQuery(() =>
+    db.query.mcpServersTable.findFirst({
+      where: and(
+        eq(mcpServersTable.uuid, uuid),
+        eq(mcpServersTable.profile_uuid, profileUuid)
+      ),
+    })
+  );
   return server;
 }
 
@@ -51,14 +56,16 @@ export async function deleteMcpServerByUuid(
   profileUuid: string,
   uuid: string
 ): Promise<void> {
-  await db
-    .delete(mcpServersTable)
-    .where(
-      and(
-        eq(mcpServersTable.uuid, uuid),
-        eq(mcpServersTable.profile_uuid, profileUuid)
+  await retryDbQuery(() =>
+    db
+      .delete(mcpServersTable)
+      .where(
+        and(
+          eq(mcpServersTable.uuid, uuid),
+          eq(mcpServersTable.profile_uuid, profileUuid)
+        )
       )
-    );
+  );
 }
 
 export async function toggleMcpServerStatus(
@@ -66,15 +73,17 @@ export async function toggleMcpServerStatus(
   uuid: string,
   newStatus: McpServerStatus
 ): Promise<void> {
-  await db
-    .update(mcpServersTable)
-    .set({ status: newStatus })
-    .where(
-      and(
-        eq(mcpServersTable.uuid, uuid),
-        eq(mcpServersTable.profile_uuid, profileUuid)
+  await retryDbQuery(() =>
+    db
+      .update(mcpServersTable)
+      .set({ status: newStatus })
+      .where(
+        and(
+          eq(mcpServersTable.uuid, uuid),
+          eq(mcpServersTable.profile_uuid, profileUuid)
+        )
       )
-    );
+  );
 }
 
 export async function updateMcpServer(
@@ -90,17 +99,19 @@ export async function updateMcpServer(
     type?: McpServerType;
   }
 ): Promise<void> {
-  await db
-    .update(mcpServersTable)
-    .set({
-      ...data,
-    })
-    .where(
-      and(
-        eq(mcpServersTable.uuid, uuid),
-        eq(mcpServersTable.profile_uuid, profileUuid)
+  await retryDbQuery(() =>
+    db
+      .update(mcpServersTable)
+      .set({
+        ...data,
+      })
+      .where(
+        and(
+          eq(mcpServersTable.uuid, uuid),
+          eq(mcpServersTable.profile_uuid, profileUuid)
+        )
       )
-    );
+  );
 }
 
 export async function createMcpServer(
@@ -116,13 +127,15 @@ export async function createMcpServer(
     type?: McpServerType;
   }
 ): Promise<McpServer> {
-  const [server] = await db
-    .insert(mcpServersTable)
-    .values({
-      ...data,
-      profile_uuid: profileUuid,
-    })
-    .returning();
+  const [server] = await retryDbQuery(() =>
+    db
+      .insert(mcpServersTable)
+      .values({
+        ...data,
+        profile_uuid: profileUuid,
+      })
+      .returning()
+  );
 
   return server as McpServer;
 }
@@ -164,7 +177,7 @@ export async function bulkImportMcpServers(
     };
 
     // Insert the server into the database
-    await db.insert(mcpServersTable).values(serverData);
+    await retryDbQuery(() => db.insert(mcpServersTable).values(serverData));
   }
 
   return { success: true, count: serverEntries.length };
