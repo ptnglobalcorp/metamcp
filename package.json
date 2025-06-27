@@ -14,10 +14,12 @@
     "start:remote-hosting": "cd remote-hosting && pnpm run start",
     "start:all": "concurrently \"pnpm run start:next\" \"pnpm run start:remote-hosting\" --kill-others --names \"App,Remote Hosting\" --prefix-colors \"blue,green\"",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.7.0",
     "@hookform/resolvers": "^3.10.0",
     "@modelcontextprotocol/sdk": "^1.11.4",
     "@monaco-editor/react": "^4.6.0",

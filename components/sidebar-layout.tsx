@@ -5,6 +5,7 @@ import {
   FileText,
   Info,
   Key,
+  LogOut,
   Plus,
   Search,
   Server,
@@ -173,6 +174,14 @@ export default function SidebarLayout({
                         <Settings className='mr-2 h-4 w-4' />
                         <span>Settings</span>
                       </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <a href='/auth/logout'>
+                        <LogOut className='mr-2 h-4 w-4' />
+                        <span>Logout</span>
+                      </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
